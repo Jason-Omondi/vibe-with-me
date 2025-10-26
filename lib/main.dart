@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:tubongeapp/locator.dart';
+
+import 'provider/vocabulary_provider.dart';
 
 void main() {
   runApp(const MyApp());
+  setUp();
 }
 
 class MyApp extends StatelessWidget {
@@ -10,12 +15,15 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tubonge App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => VocabularyProvider())],
+      child: MaterialApp(
+        title: 'Tubonge App',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        ),
+        home: const MyHomePage(title: 'Dashboard'),
       ),
-      home: const MyHomePage(title: 'Dashboard'),
     );
   }
 }
