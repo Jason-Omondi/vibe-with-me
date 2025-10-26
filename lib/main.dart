@@ -6,9 +6,10 @@ import 'provider/vocabulary_provider.dart';
 import 'screens/add_vocab_screen.dart';
 import 'screens/vocab_home.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   setUp();
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -24,10 +25,10 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         ),
-        home: VocabHome(),
+        home: const VocabHome(),
         routes: {
-          '/vocab-home': (context) => VocabHome(),
-          '/add-vocabulary': (context) => AddVocabScreen(),
+          '/vocab-home': (context) => const VocabHome(),
+          '/add-vocabulary': (context) => const AddVocabScreen(),
         },
       ),
     );
