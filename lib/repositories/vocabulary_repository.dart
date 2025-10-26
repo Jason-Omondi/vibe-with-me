@@ -47,7 +47,10 @@ class VocabularyRepository {
   //update vocab
   Future<bool> updateVocabulary(VocabularyCompanion vocabulary) async {
     try {
-      return await db.update(db.vocabulary).replace(vocabulary);
+      final result = await (db.update(
+        db.vocabulary,
+      )..where((tbl) => tbl.id.equals(vocabulary.id.value))).write(vocabulary);
+      return result > 0;
     } catch (e) {
       //log error
       log('Error updating vocabulary: $e');
