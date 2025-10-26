@@ -19,6 +19,8 @@ class _AddVocabScreenState extends State<AddVocabScreen> {
   late final TextEditingController _wordController;
   late final TextEditingController _definitionController;
   late final TextEditingController _exampleController;
+  String _selectedCategory = 'General';
+  int _selectedDifficulty = 1;
 
   @override
   void initState() {
@@ -32,6 +34,8 @@ class _AddVocabScreenState extends State<AddVocabScreen> {
     _exampleController = TextEditingController(
       text: widget.vocabulary?.exampleSentence ?? '',
     );
+    _selectedCategory = widget.vocabulary?.category ?? 'General';
+    _selectedDifficulty = widget.vocabulary?.difficulty ?? 1;
   }
 
   @override
@@ -85,6 +89,78 @@ class _AddVocabScreenState extends State<AddVocabScreen> {
                 helper: 'An example sentence using the vocabulary word',
                 textCapitalization: TextCapitalization.sentences,
                 textInputAction: TextInputAction.done,
+              ),
+              const SizedBox(height: 16),
+
+              // Category Dropdown
+              Consumer<VocabularyProvider>(
+                builder: (context, provider, child) {
+                  final categories = [
+                    'General',
+                    'Academic',
+                    'Business',
+                    'Technology',
+                    'Science',
+                  ];
+                  return DropdownButtonFormField<String>(
+                    value: _selectedCategory,
+                    decoration: const InputDecoration(
+                      labelText: 'Category',
+                      helperText: 'Choose a category for this vocabulary',
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                    items: categories
+                        .map(
+                          (category) => DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCategory = value ?? 'General';
+                      });
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Difficulty Slider
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Difficulty Level: $_selectedDifficulty',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Slider(
+                    value: _selectedDifficulty.toDouble(),
+                    min: 1,
+                    max: 5,
+                    divisions: 4,
+                    activeColor: Colors.indigo,
+                    label: _getDifficultyLabel(_selectedDifficulty),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedDifficulty = value.round();
+                      });
+                    },
+                  ),
+                  Text(
+                    _getDifficultyDescription(_selectedDifficulty),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
               SizedBox(
@@ -140,6 +216,40 @@ class _AddVocabScreenState extends State<AddVocabScreen> {
     );
   }
 
+  String _getDifficultyLabel(int difficulty) {
+    switch (difficulty) {
+      case 1:
+        return 'Very Easy';
+      case 2:
+        return 'Easy';
+      case 3:
+        return 'Medium';
+      case 4:
+        return 'Hard';
+      case 5:
+        return 'Very Hard';
+      default:
+        return 'Medium';
+    }
+  }
+
+  String _getDifficultyDescription(int difficulty) {
+    switch (difficulty) {
+      case 1:
+        return 'Simple, common words';
+      case 2:
+        return 'Everyday vocabulary';
+      case 3:
+        return 'Moderate complexity';
+      case 4:
+        return 'Advanced vocabulary';
+      case 5:
+        return 'Expert level words';
+      default:
+        return 'Moderate complexity';
+    }
+  }
+
   Future<void> _saveVocabulary() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -157,6 +267,8 @@ class _AddVocabScreenState extends State<AddVocabScreen> {
           word: Value(word),
           definition: Value(definition),
           exampleSentence: Value(example),
+          category: Value(_selectedCategory),
+          difficulty: Value(_selectedDifficulty),
         );
         await provider.updateVocabulary(companion);
         if (mounted) {
@@ -170,6 +282,9 @@ class _AddVocabScreenState extends State<AddVocabScreen> {
           word: word,
           definition: definition,
           exampleSentence: example,
+          category: Value(_selectedCategory),
+          difficulty: Value(_selectedDifficulty),
+          createdAt: Value(DateTime.now()),
         );
         await provider.addVocabulary(companion);
         if (mounted) {

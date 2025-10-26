@@ -4,7 +4,10 @@ import 'package:drift/drift.dart' hide Column;
 
 import '../database/app_db.dart';
 import '../provider/vocabulary_provider.dart';
+import '../widgets/search_filter_widget.dart';
 import 'add_vocab_screen.dart';
+import 'quiz_selection_screen.dart';
+import 'statistics_screen.dart';
 
 class VocabHome extends StatefulWidget {
   const VocabHome({super.key});
@@ -34,6 +37,28 @@ class _VocabHomeState extends State<VocabHome> {
         centerTitle: true,
         backgroundColor: Colors.indigo,
         actions: [
+          // Statistics Button
+          IconButton(
+            icon: const Icon(Icons.bar_chart, color: Colors.white),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const StatisticsDashboard(),
+              ),
+            ),
+            tooltip: 'Statistics',
+          ),
+          // Quiz Button
+          IconButton(
+            icon: const Icon(Icons.quiz, color: Colors.white),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const QuizSelectionScreen(),
+              ),
+            ),
+            tooltip: 'Practice & Quiz',
+          ),
           Consumer<VocabularyProvider>(
             builder: (context, provider, child) {
               if (provider.vocabularyList.isNotEmpty) {
@@ -65,42 +90,37 @@ class _VocabHomeState extends State<VocabHome> {
       ),
       body: Consumer<VocabularyProvider>(
         builder: (context, provider, child) {
-          if (provider.vocabularyList.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.book_outlined, size: 80, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'No vocabularies added yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Tap the + button to add your first vocabulary word!',
-                    style: TextStyle(color: Colors.grey),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+          return Column(
+            children: [
+              // Search and Filter Widget
+              SearchFilterWidget(
+                onSearchChanged: provider.setSearchQuery,
+                onCategoryChanged: provider.setCategoryFilter,
+                onMasteredFilterChanged: provider.setMasteredFilter,
+                onSortChanged: provider.setSortBy,
+                categories: provider.getCategories(),
+                currentCategory: provider.categoryFilter ?? '',
+                masteredFilter: provider.masteredFilter,
+                currentSort: provider.sortBy,
               ),
-            );
-          }
 
-          return RefreshIndicator(
-            onRefresh: () => provider.fetchVocabulary(),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8),
-              itemCount: provider.vocabularyList.length,
-              itemBuilder: (context, index) {
-                final vocabulary = provider.vocabularyList[index];
-                return _buildVocabularyCard(vocabulary);
-              },
-            ),
+              // Vocabulary List
+              Expanded(
+                child: provider.vocabularyList.isEmpty
+                    ? _buildEmptyState(provider)
+                    : RefreshIndicator(
+                        onRefresh: () => provider.fetchVocabulary(),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          itemCount: provider.vocabularyList.length,
+                          itemBuilder: (context, index) {
+                            final vocabulary = provider.vocabularyList[index];
+                            return _buildVocabularyCard(vocabulary);
+                          },
+                        ),
+                      ),
+              ),
+            ],
           );
         },
       ),
@@ -108,7 +128,62 @@ class _VocabHomeState extends State<VocabHome> {
         onPressed: () => _navigateToAddScreen(),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(VocabularyProvider provider) {
+    // Check if it's filtered search with no results
+    if (provider.searchQuery.isNotEmpty ||
+        provider.categoryFilter != null ||
+        provider.masteredFilter != null) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 80, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No matching vocabulary found',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Try adjusting your search or filters',
+              style: TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Default empty state
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.book_outlined, size: 80, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'No vocabularies added yet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Tap the + button to add your first vocabulary word!',
+            style: TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -119,9 +194,34 @@ class _VocabHomeState extends State<VocabHome> {
       elevation: 2,
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
-        title: Text(
-          vocabulary.word,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                vocabulary.word,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            // Category Chip
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getCategoryColor(vocabulary.category).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                vocabulary.category,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: _getCategoryColor(vocabulary.category),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,6 +236,27 @@ class _VocabHomeState extends State<VocabHome> {
                 fontStyle: FontStyle.italic,
                 color: Colors.grey[600],
               ),
+            ),
+            const SizedBox(height: 8),
+            // Additional info row
+            Row(
+              children: [
+                // Difficulty stars
+                ...List.generate(5, (index) {
+                  return Icon(
+                    index < vocabulary.difficulty
+                        ? Icons.star
+                        : Icons.star_border,
+                    size: 16,
+                    color: Colors.amber,
+                  );
+                }),
+                const SizedBox(width: 8),
+                Text(
+                  'Reviewed ${vocabulary.reviewCount} times',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
             ),
           ],
         ),
@@ -192,6 +313,21 @@ class _VocabHomeState extends State<VocabHome> {
         ),
       ),
     );
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Academic':
+        return Colors.purple;
+      case 'Business':
+        return Colors.orange;
+      case 'Technology':
+        return Colors.green;
+      case 'Science':
+        return Colors.red;
+      default:
+        return Colors.blue;
+    }
   }
 
   void _navigateToAddScreen() {
